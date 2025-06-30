@@ -4,45 +4,51 @@ import pandas as pd
 import random
 import asyncio
 
-async def send_quiz():
+async def send_daily_quizzes():
     """
-    यह फंक्शन Secrets को पढ़ता है, CSV से एक रैंडम सवाल उठाता है,
-    और उसे टेलीग्राम चैनल पर एक क्विज़ पोल के रूप में भेजता है।
+    यह फंक्शन एक साथ दो रैंडम क्विज़ उठाकर टेलीग्राम पर भेजता है।
     """
     try:
-        # Step 1: GitHub Secrets से टोकन और चैट आईडी लेना
         bot_token = os.environ['BOT_TOKEN']
         chat_id = os.environ['CHAT_ID']
-        
-        # Step 2: बॉट ऑब्जेक्ट बनाना
         bot = telegram.Bot(token=bot_token)
-        
-        # Step 3: CSV फाइल से सवालों को पढ़ना
         df = pd.read_csv('questions.csv')
-        # एक रैंडम सवाल चुनना
-        quiz_data = df.sample(n=1).to_dict(orient='records')[0]
         
-        # Step 4: क्विज़ के लिए डेटा तैयार करना
-        question = quiz_data['question']
-        options = [str(quiz_data['option1']), str(quiz_data['option2']), str(quiz_data['option3']), str(quiz_data['option4'])]
-        correct_option_id = int(quiz_data['correct_answer_index'])
+        # एक की जगह दो रैंडम सवाल चुनना
+        if len(df) < 2:
+            print("चेतावनी: CSV फाइल में 2 से कम सवाल हैं, इसलिए सिर्फ 1 ही भेजा जा रहा है।")
+            quiz_samples = df.sample(n=1)
+        else:
+            quiz_samples = df.sample(n=2)
         
-        print(f"'{question}' वाला क्विज़ {chat_id} पर भेज रहा हूँ...")
-        
-        # Step 5: टेलीग्राम पर क्विज़ भेजना (await के साथ)
-        await bot.send_poll(
-            chat_id=chat_id,
-            question=question,
-            options=options,
-            is_anonymous=False,
-            type='quiz',
-            correct_option_id=correct_option_id
-        )
-        print("SUCCESS: क्विज़ सफलतापूर्वक भेजा गया!")
+        print(f"2 क्विज़ {chat_id} पर भेजे जा रहे हैं...")
 
+        # दोनों सवालों को एक-एक करके भेजने के लिए लूप
+        for index, quiz_data in quiz_samples.iterrows():
+            question = quiz_data['question']
+            options = [str(quiz_data['option1']), str(quiz_data['option2']), str(quiz_data['option3']), str(quiz_data['option4'])]
+            correct_option_id = int(quiz_data['correct_answer_index'])
+            
+            # टेलीग्राम पर क्विज़ भेजना
+            await bot.send_poll(
+                chat_id=chat_id,
+                question=question,
+                options=options,
+                is_anonymous=False,
+                type='quiz',
+                correct_option_id=correct_option_id
+            )
+            print(f"'{question}' वाला क्विज़ सफलतापूर्वक भेजा गया।")
+            
+            # दो क्विज़ के बीच 2 सेकंड का छोटा सा ब्रेक
+            await asyncio.sleep(2)
+            
+        print("SUCCESS: सभी क्विज़ सफलतापूर्वक भेजे गए!")
+
+    except FileNotFoundError:
+        print("ERROR: questions.csv फाइल नहीं मिली। कृपया सुनिश्चित करें कि यह फाइल मौजूद है।")
     except Exception as e:
         print(f"ERROR: एक बड़ी त्रुटि हुई: {e}")
 
 if __name__ == "__main__":
-    # async फंक्शन को चलाने के लिए asyncio का इस्तेमाल करना
-    asyncio.run(send_quiz())
+    asyncio.run(send_daily_quizzes())
