@@ -4,9 +4,9 @@ import pandas as pd
 import random
 import asyncio
 
-async def send_daily_quizzes():
+async def send_single_quiz():
     """
-    यह फंक्शन डुप्लीकेट सवालों को हटाकर, दो यूनिक रैंडम क्विज़ भेजता है।
+    यह फंक्शन एक रैंडम क्विज़ उठाकर टेलीग्राम पर भेजता है।
     """
     try:
         # Step 1: Secrets से टोकन और चैट आईडी लेना
@@ -19,38 +19,29 @@ async def send_daily_quizzes():
         # Step 3: CSV फाइल से सवालों को पढ़ना
         df = pd.read_csv('questions.csv')
         
-        # --- नया और बेहतर हिस्सा ---
-        # सवालों में से डुप्लीकेट हटाना ताकि एक ही सवाल दोबारा न आए
+        # --- बदलाव यहाँ है ---
+        # डुप्लीकेट हटाना और सिर्फ एक रैंडम सवाल चुनना
         df.drop_duplicates(subset=['question'], inplace=True)
-        # ------------------------
-
-        # Step 4: दो यूनिक रैंडम सवाल चुनना
-        if len(df) < 2:
-            print("चेतावनी: CSV फाइल में 2 से कम यूनिक सवाल हैं, इसलिए सिर्फ 1 ही भेजा जा रहा है।")
-            quiz_samples = df.sample(n=1)
-        else:
-            quiz_samples = df.sample(n=2, replace=False) # replace=False सुनिश्चित करता है कि दोनों सवाल अलग हों
+        quiz_data = df.sample(n=1).to_dict(orient='records')[0]
+        # --------------------
         
-        print(f"2 यूनिक क्विज़ {chat_id} पर भेजे जा रहे हैं...")
-
-        # Step 5: दोनों सवालों को एक-एक करके भेजना
-        for index, quiz_data in quiz_samples.iterrows():
-            question = quiz_data['question']
-            options = [str(quiz_data['option1']), str(quiz_data['option2']), str(quiz_data['option3']), str(quiz_data['option4'])]
-            correct_option_id = int(quiz_data['correct_answer_index'])
-            
-            await bot.send_poll(
-                chat_id=chat_id,
-                question=question,
-                options=options,
-                is_anonymous=False,
-                type='quiz',
-                correct_option_id=correct_option_id
-            )
-            print(f"'{question}' वाला क्विज़ सफलतापूर्वक भेजा गया।")
-            await asyncio.sleep(2) # दो क्विज़ के बीच थोड़ा ब्रेक
-            
-        print("SUCCESS: सभी क्विज़ सफलतापूर्वक भेजे गए!")
+        # Step 4: क्विज़ के लिए डेटा तैयार करना
+        question = quiz_data['question']
+        options = [str(quiz_data['option1']), str(quiz_data['option2']), str(quiz_data['option3']), str(quiz_data['option4'])]
+        correct_option_id = int(quiz_data['correct_answer_index'])
+        
+        print(f"'{question}' वाला क्विज़ {chat_id} पर भेज रहा हूँ...")
+        
+        # Step 5: टेलीग्राम पर क्विज़ भेजना
+        await bot.send_poll(
+            chat_id=chat_id,
+            question=question,
+            options=options,
+            is_anonymous=False,
+            type='quiz',
+            correct_option_id=correct_option_id
+        )
+        print("SUCCESS: क्विज़ सफलतापूर्वक भेजा गया!")
 
     except FileNotFoundError:
         print("ERROR: questions.csv फाइल नहीं मिली।")
@@ -58,5 +49,4 @@ async def send_daily_quizzes():
         print(f"ERROR: एक बड़ी त्रुटि हुई: {e}")
 
 if __name__ == "__main__":
-    asyncio.run(send_daily_quizzes())
-
+    asyncio.run(send_single_quiz())
