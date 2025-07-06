@@ -1,15 +1,30 @@
 name: Daily Quiz Bot
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # इसे मैन्युअल रूप से चलाने के लिए
   schedule:
-    - cron: '0 * * * *' # यह हर घंटे चलेगा
+    # यह शेड्यूल दिन में 15 बार चलेगा (सुबह 9 बजे से रात 8 बजे तक)
+    - cron: '30 3 * * *'  # सुबह 9:00 बजे IST
+    - cron: '15 4 * * *'  # सुबह 9:45 बजे IST
+    - cron: '0 5 * * *'   # सुबह 10:30 बजे IST
+    - cron: '45 5 * * *'  # सुबह 11:15 बजे IST
+    - cron: '30 6 * * *'  # दोपहर 12:00 बजे IST
+    - cron: '15 7 * * *'  # दोपहर 12:45 बजे IST
+    - cron: '0 8 * * *'   # दोपहर 1:30 बजे IST
+    - cron: '45 8 * * *'  # दोपहर 2:15 बजे IST
+    - cron: '30 9 * * *'  # दोपहर 3:00 बजे IST
+    - cron: '15 10 * * *' # दोपहर 3:45 बजे IST
+    - cron: '0 11 * * *'  # शाम 4:30 बजे IST
+    - cron: '45 11 * * *' # शाम 5:15 बजे IST
+    - cron: '30 12 * * *' # शाम 6:00 बजे IST
+    - cron: '15 13 * * *' # शाम 6:45 बजे IST
+    - cron: '0 14 * * *'  # शाम 7:30 बजे IST
 
 jobs:
   send-quiz:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # बॉट को फाइल सेव करने की अनुमति देना
+      contents: write # यह लाइन ज़रूरी है
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
