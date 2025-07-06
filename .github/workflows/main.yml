@@ -1,13 +1,15 @@
 name: Daily Quiz Bot
 
 on:
-  repository_dispatch:
-    types: [run-quiz]
   workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *' # यह हर घंटे चलेगा
 
 jobs:
   send-quiz:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # बॉट को फाइल सेव करने की अनुमति देना
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -27,4 +29,13 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python quiz_bot.py
-
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'github-actions-bot@github.com'
+          
+      - name: Commit and push if changed
+        run: |
+          git add sent_questions.txt
+          git diff --staged --quiet || (git commit -m "Update sent questions list" && git push)
